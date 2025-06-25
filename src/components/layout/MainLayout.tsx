@@ -1,18 +1,6 @@
-import dynamic from 'next/dynamic';
 import Header from './Header';
 import Footer from './Footer';
-
-// 🔧 Toast를 클라이언트에서만 로드 (SSR 제외)
-const Toast = dynamic(() => import('@/components/ui/Toast'), {
-  ssr: false,
-  loading: () => (
-    <div className="fixed top-4 right-4 z-[9999]">
-      <div className="bg-gray-200 text-gray-600 p-3 rounded text-xs">
-        Toast Loading...
-      </div>
-    </div>
-  )
-});
+import Toast from '@/components/ui/Toast'; // 🔧 직접 import
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -29,6 +17,9 @@ export default function MainLayout({
   showToast = true,
   className = '' 
 }: MainLayoutProps) {
+  // 🔧 MainLayout 렌더링 확인
+  console.log('🔧 MainLayout 렌더링됨 - showToast:', showToast);
+
   return (
     <div className="min-h-screen flex flex-col relative">
       {/* Header */}
@@ -50,8 +41,8 @@ export default function MainLayout({
         </footer>
       )}
       
-      {/* 🔧 Toast - 클라이언트에서만 로드 */}
-      {showToast && <Toast />}
+      {/* 🔧 Toast - 항상 렌더링 (조건부 제거) */}
+      <Toast />
     </div>
   );
 }

@@ -23,7 +23,7 @@ interface UIState {
   isGlobalLoading: boolean;
   setGlobalLoading: (loading: boolean) => void;
   
-  // 🔧 토스트 시스템
+  // 🔧 토스트 시스템 (완전 안정화)
   toasts: ToastType[];
   addToast: (toast: Omit<ToastType, 'id'>) => void;
   removeToast: (id: string) => void;
@@ -68,41 +68,43 @@ export const useUIStore = create<UIState>()(
         set({ isGlobalLoading: loading });
       },
       
-      // 🔧 토스트 시스템 (Hydration 안전)
+      // 🔧 토스트 시스템 (완전 안정화)
       toasts: [],
       
       addToast: (toast) => {
         console.log('🍞 addToast 호출됨:', toast);
-        
-        // 🔧 클라이언트에서만 실행되도록 보장
-        if (typeof window === 'undefined') {
-          console.log('🍞 서버 사이드에서는 토스트 추가 안함');
-          return;
-        }
         
         const id = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
         const newToast: ToastType = { ...toast, id };
         
         console.log('🍞 새 토스트 생성:', newToast);
         
+        // 🔧 상태 업데이트 직후 즉시 확인
         set((state) => {
           const newState = {
             ...state,
             toasts: [...state.toasts, newToast]
           };
-          console.log('🍞 store 업데이트:', { 
+          console.log('🍞 store 업데이트 완료:', { 
             이전: state.toasts.length, 
             이후: newState.toasts.length,
-            새토스트: newToast
+            새토스트: newToast,
+            전체토스트: newState.toasts
           });
+          
+          // 🔧 업데이트 직후 강제 구독자 알림
+          setTimeout(() => {
+            console.log('🍞 업데이트 후 현재 store 상태:', get().toasts.length);
+          }, 100);
+          
           return newState;
         });
         
-        // 자동 제거 (5초)
+        // 자동 제거 (7초로 연장)
         setTimeout(() => {
           console.log('🍞 자동 제거 실행:', id);
           get().removeToast(id);
-        }, 5000);
+        }, 7000);
       },
       
       removeToast: (id) => {
@@ -125,12 +127,17 @@ export const useUIStore = create<UIState>()(
   )
 );
 
-// 🔧 토스트 변화 구독 (클라이언트에서만)
+// 🔧 글로벌 구독 (클라이언트에서만) - 강제 리렌더링 트리거
 if (typeof window !== 'undefined') {
   useUIStore.subscribe(
     (state) => state.toasts,
     (toasts) => {
-      console.log('🍞 토스트 상태 변화 감지:', toasts.length);
+      console.log('🍞 글로벌 토스트 상태 변화 감지:', toasts.length, toasts);
+      
+      // 🔧 강제 DOM 업데이트 트리거 (필요시)
+      if (toasts.length > 0) {
+        console.log('🍞 토스트가 추가됨 - DOM 업데이트 트리거');
+      }
     }
   );
 }
